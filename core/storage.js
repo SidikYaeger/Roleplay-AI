@@ -138,7 +138,7 @@ const Storage = (() => {
     // Prioritaskan CONFIG dari config.js (file lokal)
     if (typeof CONFIG !== 'undefined' &&
         CONFIG.apiKey &&
-        !CONFIG.apiKey.includes('MASUKKAN_API_KEY')) {
+        !CONFIG.apiKey.includes('MASUKKAN_')) {
       return CONFIG.apiKey;
     }
     return getSettings().apiKey || '';
@@ -152,11 +152,20 @@ const Storage = (() => {
     return getSettings().model || 'gemini-2.0-flash';
   }
 
+  function getProvider() {
+    if (typeof CONFIG !== 'undefined' && CONFIG.provider) {
+      return CONFIG.provider;
+    }
+    const key = getApiKey();
+    if (key.startsWith('sk-')) return 'deepseek';
+    return 'gemini';
+  }
+
   return {
     generateId,
     getCharacters, getCharacterById, saveCharacter, deleteCharacter,
     getSession, saveSession, deleteSession, getLastSessionPreview,
     getPersona, savePersona,
-    getSettings, saveSettings, getApiKey, getModel,
+    getSettings, saveSettings, getApiKey, getModel, getProvider,
   };
 })();

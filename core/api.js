@@ -1,33 +1,50 @@
 /**
  * core/api.js
- * Handles all communication with the Google Gemini API.
- * Supports streaming responses via Server-Sent Events (SSE).
+ * Multi-provider AI API module.
+ * Supports: Google Gemini, DeepSeek (OpenAI-compatible)
  */
 
 const GeminiAPI = (() => {
-  const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-  /**
-   * Streams a response from the Gemini API.
-   * @param {object} params
-   * @param {string} params.apiKey
-   * @param {string} params.model
-   * @param {string} params.systemPrompt
-   * @param {Array}  params.history  - Array of {role, parts} objects
-   * @param {function} params.onChunk - Called with each text chunk (string)
-   * @param {function} params.onDone  - Called when stream is complete with full text
-   * @param {function} params.onError - Called on error with Error object
-   * @returns {AbortController} - Can be used to cancel the stream
-   */
+  // ──────────────────────────────────────────────────────
+  // PROVIDER DETECTION
+  // ──────────────────────────────────────────────────────
+
+  function getProvider() {
+    if (typeof CONFIG !== 'undefined' && CONFIG.provider) {
+      return CONFIG.provider; // 'gemini' | 'deepseek'
+    }
+    // Auto-detect from API key format
+    const key = Storage.getApiKey();
+    if (key.startsWith('sk-')) return 'deepseek';
+    return 'gemini'; // default
+  }
+
+  // ──────────────────────────────────────────────────────
+  // MAIN STREAM FUNCTION (auto-routes to correct provider)
+  // ──────────────────────────────────────────────────────
+
   async function streamChat({ apiKey, model, systemPrompt, history, onChunk, onDone, onError }) {
+    const provider = getProvider();
+
+    if (provider === 'deepseek') {
+      return streamDeepSeek({ apiKey, model, systemPrompt, history, onChunk, onDone, onError });
+    } else {
+      return streamGemini({ apiKey, model, systemPrompt, history, onChunk, onDone, onError });
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // GOOGLE GEMINI (SSE / v1beta)
+  // ──────────────────────────────────────────────────────
+
+  async function streamGemini({ apiKey, model, systemPrompt, history, onChunk, onDone, onError }) {
     const controller = new AbortController();
-    const url = `${BASE_URL}/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
 
     const body = {
-      system_instruction: {
-        parts: [{ text: systemPrompt }]
-      },
-      contents: history,
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: history, // [{role:'user'|'model', parts:[{text}]}]
       generationConfig: {
         temperature: 1.05,
         topP: 0.95,
@@ -51,12 +68,9 @@ const GeminiAPI = (() => {
       });
 
       if (!response.ok) {
-        let errorMsg = `Error ${response.status}: ${response.statusText}`;
-        try {
-          const errData = await response.json();
-          errorMsg = errData?.error?.message || errorMsg;
-        } catch (_) {}
-        throw new Error(errorMsg);
+        let msg = `Error ${response.status}`;
+        try { const e = await response.json(); msg = e?.error?.message || msg; } catch (_) {}
+        throw new Error(msg);
       }
 
       const reader = response.body.getReader();
@@ -70,81 +84,136 @@ const GeminiAPI = (() => {
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        // Keep the last potentially-incomplete line in buffer
         buffer = lines.pop() || '';
 
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const jsonStr = line.slice(6).trim();
           if (!jsonStr || jsonStr === '[DONE]') continue;
-
           try {
             const parsed = JSON.parse(jsonStr);
             const chunk = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (chunk) {
-              fullText += chunk;
-              onChunk && onChunk(chunk);
-            }
-          } catch (parseErr) {
-            // Ignore malformed JSON chunks
-          }
+            if (chunk) { fullText += chunk; onChunk && onChunk(chunk); }
+          } catch (_) {}
         }
       }
 
       onDone && onDone(fullText);
     } catch (err) {
-      if (err.name === 'AbortError') return; // Cancelled by user
+      if (err.name === 'AbortError') return;
       onError && onError(err);
     }
 
     return controller;
   }
 
-  /**
-   * Simple non-streaming API call (for testing/validation).
-   */
-  async function generateContent({ apiKey, model, systemPrompt, history }) {
-    const url = `${BASE_URL}/${model}:generateContent?key=${apiKey}`;
+  // ──────────────────────────────────────────────────────
+  // DEEPSEEK — OpenAI-Compatible API
+  // ──────────────────────────────────────────────────────
+
+  async function streamDeepSeek({ apiKey, model, systemPrompt, history, onChunk, onDone, onError }) {
+    const controller = new AbortController();
+    const url = 'https://api.deepseek.com/chat/completions';
+
+    // Convert Gemini-style history to OpenAI-style messages
+    // Gemini: [{role:'user'|'model', parts:[{text}]}]
+    // OpenAI: [{role:'user'|'assistant'|'system', content:'...'}]
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...history.map(msg => ({
+        role: msg.role === 'model' ? 'assistant' : 'user',
+        content: msg.parts?.[0]?.text ?? msg.text ?? '',
+      })),
+    ];
+
     const body = {
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: history,
-      generationConfig: { temperature: 1.0, maxOutputTokens: 2048 },
+      model,
+      messages,
+      stream: true,
+      max_tokens: 2048,
+      temperature: 1.0,
+      top_p: 0.95,
     };
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errData = await response.json();
-      throw new Error(errData?.error?.message || `Error ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  }
-
-  /**
-   * Validates an API key by making a minimal request.
-   */
-  async function validateApiKey(apiKey) {
     try {
-      const url = `${BASE_URL}/gemini-1.5-flash:generateContent?key=${apiKey}`;
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: 'Halo' }] }],
-          generationConfig: { maxOutputTokens: 5 },
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
       });
-      return response.ok || response.status === 400; // 400 = valid key but bad request
+
+      if (!response.ok) {
+        let msg = `Error ${response.status}`;
+        try { const e = await response.json(); msg = e?.error?.message || msg; } catch (_) {}
+        throw new Error(msg);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr || jsonStr === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const chunk = parsed?.choices?.[0]?.delta?.content;
+            if (chunk) { fullText += chunk; onChunk && onChunk(chunk); }
+          } catch (_) {}
+        }
+      }
+
+      onDone && onDone(fullText);
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      onError && onError(err);
+    }
+
+    return controller;
+  }
+
+  // ──────────────────────────────────────────────────────
+  // VALIDATE API KEY
+  // ──────────────────────────────────────────────────────
+
+  async function validateApiKey(apiKey) {
+    try {
+      const provider = getProvider();
+      if (provider === 'deepseek') {
+        const response = await fetch('https://api.deepseek.com/models', {
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+        });
+        return response.ok;
+      } else {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: 'Hi' }] }],
+            generationConfig: { maxOutputTokens: 5 },
+          }),
+        });
+        return response.ok || response.status === 400;
+      }
     } catch (_) {
       return false;
     }
   }
 
-  return { streamChat, generateContent, validateApiKey };
+  return { streamChat, validateApiKey, getProvider };
 })();
