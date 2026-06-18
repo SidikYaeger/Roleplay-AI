@@ -1,4 +1,4 @@
-# ✦ Aether — AI Roleplay Visual Novel
+# ✦ Aether — ga kelar sial
 
 > Masuki dunia fantasi tak terbatas. Ciptakan karakter AI, bangun persona Anda, dan mulailah petualangan roleplay yang mendalam bersama kecerdasan buatan Google Gemini.
 
