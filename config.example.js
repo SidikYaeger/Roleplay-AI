@@ -6,19 +6,30 @@
 
 const CONFIG = {
 
-  // ── OPSI 1: Google Gemini ────────────────────────────────
-  // API Key: https://aistudio.google.com/app/apikey
-  // Format key bisa AIzaSy... atau AQ.Ab8... (keduanya valid)
-  provider: 'gemini',
-  apiKey: 'MASUKKAN_API_KEY_GEMINI_DI_SINI',
-  model: 'gemini-2.0-flash',
-  // model: 'gemini-2.5-flash-preview-05-20',
+  // ── OPSI 1: OpenRouter (GRATIS & TERBAIK SAAT INI) ─────────
+  // OpenRouter menyediakan model Gemini 2.0 Flash secara GRATIS 100%
+  // tanpa perlu kartu kredit.
+  // API Key: https://openrouter.ai/settings/keys (dimulai sk-or-v1-...)
+  provider: 'openai',
+  baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
+  apiKey: 'MASUKKAN_API_KEY_OPENROUTER_DI_SINI',
+  model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+  // model gratis lainnya di OpenRouter:
+  // - google/gemini-2.0-pro-exp-02-05:free
+  // - meta-llama/llama-3-8b-instruct:free
 
-  // ── OPSI 2: DeepSeek ─────────────────────────────────────
+  // ── OPSI 2: Google Gemini (Direct API) ────────────────────
+  // Butuh kartu kredit/billing aktif untuk menghindari Quota 0
+  // API Key: https://aistudio.google.com/app/apikey (dimulai AIzaSy... atau AQ.Ab8...)
+  // provider: 'gemini',
+  // apiKey: 'AIzaSy...',
+  // model: 'gemini-2.0-flash',
+
+  // ── OPSI 3: DeepSeek ─────────────────────────────────────
   // API Key: https://platform.deepseek.com/api_keys (dimulai sk-...)
-  // provider: 'deepseek',
+  // provider: 'openai',
+  // baseUrl: 'https://api.deepseek.com/chat/completions',
   // apiKey: 'sk-...',
   // model: 'deepseek-chat',
-  // model: 'deepseek-reasoner',
 
 };

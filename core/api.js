@@ -10,25 +10,38 @@ const GeminiAPI = (() => {
   // PROVIDER DETECTION
   // ──────────────────────────────────────────────────────
 
+  // ──────────────────────────────────────────────────────
+  // PROVIDER DETECTION
+  // ──────────────────────────────────────────────────────
+
   function getProvider() {
     if (typeof CONFIG !== 'undefined' && CONFIG.provider) {
-      return CONFIG.provider; // 'gemini' | 'deepseek'
+      return CONFIG.provider; // 'gemini' | 'openai'
     }
-    // Auto-detect from API key format
     const key = Storage.getApiKey();
-    if (key.startsWith('sk-')) return 'deepseek';
-    return 'gemini'; // default
+    if (key.startsWith('sk-or-')) return 'openai'; // OpenRouter
+    if (key.startsWith('sk-')) return 'openai';    // DeepSeek / Groq
+    return 'gemini';
+  }
+
+  function getBaseUrl() {
+    if (typeof CONFIG !== 'undefined' && CONFIG.baseUrl) {
+      return CONFIG.baseUrl;
+    }
+    const key = Storage.getApiKey();
+    if (key.startsWith('sk-or-')) return 'https://openrouter.ai/api/v1/chat/completions';
+    return 'https://api.deepseek.com/chat/completions'; // Default fallback
   }
 
   // ──────────────────────────────────────────────────────
-  // MAIN STREAM FUNCTION (auto-routes to correct provider)
+  // MAIN STREAM FUNCTION
   // ──────────────────────────────────────────────────────
 
   async function streamChat({ apiKey, model, systemPrompt, history, onChunk, onDone, onError }) {
     const provider = getProvider();
 
-    if (provider === 'deepseek') {
-      return streamDeepSeek({ apiKey, model, systemPrompt, history, onChunk, onDone, onError });
+    if (provider === 'openai') {
+      return streamOpenAICompatible({ apiKey, model, systemPrompt, history, onChunk, onDone, onError });
     } else {
       return streamGemini({ apiKey, model, systemPrompt, history, onChunk, onDone, onError });
     }
@@ -44,7 +57,7 @@ const GeminiAPI = (() => {
 
     const body = {
       system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: history, // [{role:'user'|'model', parts:[{text}]}]
+      contents: history,
       generationConfig: {
         temperature: 1.05,
         topP: 0.95,
@@ -108,16 +121,13 @@ const GeminiAPI = (() => {
   }
 
   // ──────────────────────────────────────────────────────
-  // DEEPSEEK — OpenAI-Compatible API
+  // OPENAI-COMPATIBLE (OpenRouter, DeepSeek, Groq)
   // ──────────────────────────────────────────────────────
 
-  async function streamDeepSeek({ apiKey, model, systemPrompt, history, onChunk, onDone, onError }) {
+  async function streamOpenAICompatible({ apiKey, model, systemPrompt, history, onChunk, onDone, onError }) {
     const controller = new AbortController();
-    const url = 'https://api.deepseek.com/chat/completions';
+    const url = getBaseUrl();
 
-    // Convert Gemini-style history to OpenAI-style messages
-    // Gemini: [{role:'user'|'model', parts:[{text}]}]
-    // OpenAI: [{role:'user'|'assistant'|'system', content:'...'}]
     const messages = [
       { role: 'system', content: systemPrompt },
       ...history.map(msg => ({
@@ -135,13 +145,21 @@ const GeminiAPI = (() => {
       top_p: 0.95,
     };
 
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    };
+
+    // OpenRouter specific headers (opsional tapi disarankan)
+    if (url.includes('openrouter.ai')) {
+      headers['HTTP-Referer'] = 'http://localhost:8000';
+      headers['X-Title'] = 'Aether AI Roleplay';
+    }
+
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
+        headers,
         body: JSON.stringify(body),
         signal: controller.signal,
       });
