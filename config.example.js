@@ -13,10 +13,9 @@ const CONFIG = {
   provider: 'openai',
   baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
   apiKey: 'MASUKKAN_API_KEY_OPENROUTER_DI_SINI',
-  model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+  model: 'meta-llama/llama-3.3-70b-instruct:free',
   // model gratis lainnya di OpenRouter:
-  // - google/gemini-2.0-pro-exp-02-05:free
-  // - meta-llama/llama-3-8b-instruct:free
+  // - nousresearch/hermes-3-llama-3.1-405b:free
 
   // ── OPSI 2: Google Gemini (Direct API) ────────────────────
   // Butuh kartu kredit/billing aktif untuk menghindari Quota 0
