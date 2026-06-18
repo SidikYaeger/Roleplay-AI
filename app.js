@@ -1,7 +1,8 @@
 /**
  * app.js
  * Main application controller: router, global utilities,
- * modal management, toast notifications, starfield animation.
+ * toast notifications, starfield animation.
+ * API key dikonfigurasi melalui config.js (bukan UI).
  */
 
 // ──────────────────────────────────────────────────────
@@ -26,7 +27,6 @@ const App = (() => {
   // ── Router ──────────────────────────────────────────
 
   function navigate(page, param = null) {
-    // Build hash
     const hash = param ? `#${page}/${param}` : `#${page}`;
     history.pushState(null, '', hash);
     route();
@@ -54,70 +54,6 @@ const App = (() => {
       default:
         navigate('home');
     }
-  }
-
-  // ── API Modal ────────────────────────────────────────
-
-  function openApiModal(isSettings = false) {
-    const modal      = document.getElementById('api-modal');
-    const cancelBtn  = document.getElementById('api-cancel-btn');
-    const keyInput   = document.getElementById('api-key-input');
-    const modelSel   = document.getElementById('model-select');
-
-    // Pre-fill with saved values
-    const settings = Storage.getSettings();
-    if (keyInput) keyInput.value = settings.apiKey || '';
-    if (modelSel) modelSel.value = settings.model  || 'gemini-1.5-pro';
-
-    if (isSettings && cancelBtn) cancelBtn.style.display = 'inline-flex';
-    else if (cancelBtn)          cancelBtn.style.display = 'none';
-
-    modal?.classList.remove('hidden');
-    setTimeout(() => keyInput?.focus(), 100);
-  }
-
-  function closeApiModal() {
-    document.getElementById('api-modal')?.classList.add('hidden');
-  }
-
-  function initApiModal() {
-    const saveBtn    = document.getElementById('api-save-btn');
-    const cancelBtn  = document.getElementById('api-cancel-btn');
-    const toggleBtn  = document.getElementById('toggle-api-visibility');
-    const keyInput   = document.getElementById('api-key-input');
-
-    saveBtn?.addEventListener('click', async () => {
-      const key   = keyInput?.value?.trim();
-      const model = document.getElementById('model-select')?.value || 'gemini-1.5-pro';
-
-      if (!key) { showToast('Masukkan API Key terlebih dahulu!', 'error'); return; }
-
-      saveBtn.disabled = true;
-      saveBtn.innerHTML = '<span>Memvalidasi...</span>';
-
-      Storage.saveSettings({ apiKey: key, model });
-      closeApiModal();
-      showToast('Pengaturan berhasil disimpan! ✦', 'success');
-
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = '<span>Buka Portal</span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
-
-      // Re-route to ensure page reflects new settings
-      route();
-    });
-
-    cancelBtn?.addEventListener('click', closeApiModal);
-
-    toggleBtn?.addEventListener('click', () => {
-      if (!keyInput) return;
-      const isPassword = keyInput.type === 'password';
-      keyInput.type = isPassword ? 'text' : 'password';
-    });
-
-    // Close on backdrop click
-    document.getElementById('api-modal')?.addEventListener('click', (e) => {
-      if (e.target.id === 'api-modal' && Storage.getApiKey()) closeApiModal();
-    });
   }
 
   // ── Confirm Modal ────────────────────────────────────
@@ -167,17 +103,11 @@ const App = (() => {
     const canvas = document.getElementById('stars-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-
-    let stars = [];
-    let width, height;
+    let stars = [], width, height;
 
     function resize() {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
-      createStars();
-    }
-
-    function createStars() {
       stars = Array.from({ length: 180 }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
@@ -209,30 +139,28 @@ const App = (() => {
 
   function init() {
     initStarfield();
-    initApiModal();
     initConfirmModal();
-
-    // Handle browser back/forward
     window.addEventListener('popstate', route);
 
-    // Cek API key — dari config.js atau localStorage
     const apiKey = Storage.getApiKey();
-    const configHasKey = typeof CONFIG !== 'undefined' &&
-                         CONFIG.apiKey &&
-                         !CONFIG.apiKey.includes('MASUKKAN_API_KEY');
-
     if (!apiKey) {
-      openApiModal(false);
-      const modelSel = document.getElementById('model-select');
-      if (modelSel) modelSel.value = 'gemini-2.0-flash';
-      setTimeout(() => HomePage.render(), 200);
-    } else {
-      if (configHasKey) {
-        // Langsung ke halaman utama, tidak perlu modal
-        console.log(`✦ Aether: Config loaded — model: ${Storage.getModel()}`);
-      }
-      route();
+      // Tampilkan pesan error jika config.js belum diisi
+      document.getElementById('app').innerHTML = `
+        <div class="page-loading">
+          <div style="font-size:40px;margin-bottom:16px;">⚠️</div>
+          <p style="color:var(--text-secondary);text-align:center;max-width:400px;line-height:1.7;">
+            API Key belum dikonfigurasi.<br>
+            Buka file <code style="color:var(--primary-light);background:var(--bg-surface-2);padding:2px 8px;border-radius:4px;">config.js</code>
+            dan isi <code style="color:var(--primary-light);background:var(--bg-surface-2);padding:2px 8px;border-radius:4px;">apiKey</code>
+            dengan key Anda.
+          </p>
+        </div>
+      `;
+      return;
     }
+
+    console.log(`✦ Aether ready — provider: ${Storage.getProvider()}, model: ${Storage.getModel()}`);
+    route();
   }
 
   // Start when DOM is ready
@@ -242,5 +170,5 @@ const App = (() => {
     init();
   }
 
-  return { navigate, route, openApiModal, closeApiModal, showToast, showConfirm };
+  return { navigate, route, showToast, showConfirm };
 })();
