@@ -4,6 +4,10 @@ Thumbs.db
 desktop.ini
 *.lnk
 
+# Konfigurasi Lokal (JANGAN DI-COMMIT — berisi API key!)
+config.js
+
+
 # Editor Directories
 .vscode/settings.json
 .idea/

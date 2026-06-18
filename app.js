@@ -215,16 +215,22 @@ const App = (() => {
     // Handle browser back/forward
     window.addEventListener('popstate', route);
 
-    // Check API key
+    // Cek API key — dari config.js atau localStorage
     const apiKey = Storage.getApiKey();
+    const configHasKey = typeof CONFIG !== 'undefined' &&
+                         CONFIG.apiKey &&
+                         !CONFIG.apiKey.includes('MASUKKAN_API_KEY');
+
     if (!apiKey) {
       openApiModal(false);
-      // Set default model to gemini-1.5-pro
       const modelSel = document.getElementById('model-select');
       if (modelSel) modelSel.value = 'gemini-2.0-flash';
-      // Show home in background after short delay
       setTimeout(() => HomePage.render(), 200);
     } else {
+      if (configHasKey) {
+        // Langsung ke halaman utama, tidak perlu modal
+        console.log(`✦ Aether: Config loaded — model: ${Storage.getModel()}`);
+      }
       route();
     }
   }
