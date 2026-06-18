@@ -114,9 +114,19 @@ const Storage = (() => {
 
   // --- Settings ---
   function getSettings() {
-    return read(KEYS.SETTINGS) || {
+    const saved = read(KEYS.SETTINGS) || {};
+
+    // Auto-migrate deprecated model names
+    const deprecated = ['gemini-1.5-pro', 'gemini-1.5-pro-latest', 'gemini-pro'];
+    if (deprecated.includes(saved.model)) {
+      saved.model = 'gemini-2.0-flash';
+      write(KEYS.SETTINGS, saved);
+    }
+
+    return {
       apiKey: '',
-      model: 'gemini-1.5-pro',
+      model: 'gemini-2.0-flash',
+      ...saved,
     };
   }
 

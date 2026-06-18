@@ -221,7 +221,7 @@ const App = (() => {
       openApiModal(false);
       // Set default model to gemini-1.5-pro
       const modelSel = document.getElementById('model-select');
-      if (modelSel) modelSel.value = 'gemini-1.5-pro';
+      if (modelSel) modelSel.value = 'gemini-2.0-flash';
       // Show home in background after short delay
       setTimeout(() => HomePage.render(), 200);
     } else {
