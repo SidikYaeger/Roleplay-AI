@@ -1,0 +1,37 @@
+# OS & System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# Editor Directories
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment & Secrets (JANGAN PERNAH DI-COMMIT)
+.env
+.env.local
+.env.*.local
+*.key
+secrets.*
+config.local.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Node (jika nanti dipakai)
+node_modules/
+dist/
+.npm/
+
+# Python cache (jika pakai python server)
+__pycache__/
+*.py[cod]
+
+# Temporary files
+*.tmp
+*.temp

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aether — AI Roleplay</title>
+  <meta name="description" content="Masuki dunia fantasi tak terbatas. Ciptakan karakter AI, bangun persona Anda, dan mulai petualangan roleplay yang mendalam bersama kecerdasan buatan Gemini.">
+  <meta name="theme-color" content="#080810">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <div class="bg-animated" aria-hidden="true">
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+    <canvas id="stars-canvas"></canvas>
+  </div>
+
+  <!-- App Root -->
+  <div id="app">
+    <div class="page-loading">
+      <div class="loading-rune">✦</div>
+      <p>Memuat dunia...</p>
+    </div>
+  </div>
+
+  <!-- API Key Modal -->
+  <div id="api-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="api-modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon">🔑</div>
+        <h2 class="modal-title" id="api-modal-title">Konfigurasi API Key</h2>
+        <p class="modal-subtitle">Masukkan Google AI Studio API Key Anda untuk membuka portal ke Aether.</p>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="api-key-input" class="form-label">Google AI Studio API Key</label>
+          <div class="input-with-toggle">
+            <input type="password" id="api-key-input" class="form-input" placeholder="AIzaSy..." autocomplete="off" spellcheck="false">
+            <button class="btn-icon" id="toggle-api-visibility" type="button" title="Tampilkan/sembunyikan key">
+              <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <p class="form-hint">
+            Dapatkan API Key gratis di
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="link">Google AI Studio</a>.
+            Key hanya disimpan di browser Anda (localStorage).
+          </p>
+        </div>
+        <div class="form-group">
+          <label for="model-select" class="form-label">Model AI</label>
+          <select id="model-select" class="form-select">
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Terbaru & Cepat)</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro (Kualitas Terbaik)</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Hemat & Cepat)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="api-cancel-btn" class="btn btn-ghost" style="display:none;">Batal</button>
+        <button id="api-save-btn" class="btn btn-primary" id="api-save-btn">
+          <span>Buka Portal</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Dialog -->
+  <div id="confirm-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <div class="modal-icon" id="confirm-icon">⚠️</div>
+        <h2 class="modal-title" id="confirm-title">Konfirmasi</h2>
+        <p class="modal-subtitle" id="confirm-message">Apakah Anda yakin?</p>
+      </div>
+      <div class="modal-footer">
+        <button id="confirm-cancel-btn" class="btn btn-ghost">Batal</button>
+        <button id="confirm-ok-btn" class="btn btn-danger">Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- Scripts (order matters) -->
+  <script src="core/storage.js"></script>
+  <script src="core/api.js"></script>
+  <script src="core/promptBuilder.js"></script>
+  <script src="pages/home.js"></script>
+  <script src="pages/character.js"></script>
+  <script src="pages/persona.js"></script>
+  <script src="pages/chat.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
