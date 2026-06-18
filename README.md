@@ -1,6 +1,6 @@
 # ✦ Aether — ga kelar sial
 
-> Masuki dunia fantasi tak terbatas. Ciptakan karakter AI, bangun persona Anda, dan mulailah petualangan roleplay yang mendalam bersama kecerdasan buatan Google Gemini.
+> code full by claude sonnet 4.6 and gemini pro 3.1 
 
 ![Aether Preview](https://via.placeholder.com/900x400/0e0e1c/a78bfa?text=✦+Aether+AI+Roleplay)
 
@@ -104,5 +104,3 @@ Dialog langsung karakter yang berbicara kepada Anda.
 MIT License — bebas digunakan dan dimodifikasi.
 
 ---
-
-*Dibuat dengan ✦ dan sedikit sihir.*
