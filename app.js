@@ -48,8 +48,7 @@ const App = (() => {
         PersonaPage.render();
         break;
       case 'chat':
-        if (!param) { navigate('home'); return; }
-        ChatPage.render(param);
+        ChatPage.render(); // sesi global, tidak perlu param
         break;
       default:
         navigate('home');

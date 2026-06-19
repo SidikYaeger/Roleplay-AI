@@ -6,10 +6,11 @@
 
 const Storage = (() => {
   const KEYS = {
-    CHARACTERS: 'aether_characters',
-    SESSIONS:   'aether_sessions',
-    PERSONA:    'aether_persona',
-    SETTINGS:   'aether_settings',
+    CHARACTERS:   'aether_characters',
+    SESSIONS:     'aether_sessions',
+    PERSONA:      'aether_persona',
+    SETTINGS:     'aether_settings',
+    MAIN_SESSION: 'aether_main_session', // satu sesi roleplay global
   };
 
   // --- Helpers ---
@@ -161,11 +162,25 @@ const Storage = (() => {
     return 'gemini';
   }
 
+  // --- Main Session (Sesi Roleplay Global) ---
+  function getMainSession() {
+    return read(KEYS.MAIN_SESSION) || [];
+  }
+
+  function saveMainSession(history) {
+    write(KEYS.MAIN_SESSION, history);
+  }
+
+  function deleteMainSession() {
+    localStorage.removeItem(KEYS.MAIN_SESSION);
+  }
+
   return {
     generateId,
     getCharacters, getCharacterById, saveCharacter, deleteCharacter,
     getSession, saveSession, deleteSession, getLastSessionPreview,
     getPersona, savePersona,
     getSettings, saveSettings, getApiKey, getModel, getProvider,
+    getMainSession, saveMainSession, deleteMainSession,
   };
 })();

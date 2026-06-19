@@ -1,81 +1,80 @@
 /**
  * core/promptBuilder.js
- * Builds dynamic system prompts for the Gemini API
- * based on character and persona data.
+ * Builds dynamic system prompts for the AI API.
+ * AI berperan sebagai narrator/GM yang menghidupkan dunia
+ * dan memainkan semua karakter yang ada sebagai cast.
  */
 
 const PromptBuilder = (() => {
 
   /**
-   * Builds the main system prompt for a roleplay session.
-   * @param {object} character - Character object from storage
-   * @param {object} persona   - User persona object from storage
+   * Builds the main GM/narrator system prompt.
+   * @param {object[]} characters - Semua karakter dari storage (cast)
+   * @param {object}   persona    - User persona object from storage
    * @returns {string} - The complete system prompt
    */
-  function buildSystemPrompt(character, persona) {
-    const charName    = character.name        || 'Karakter';
-    const charPersona = character.personality || 'Kepribadian yang menarik dan unik.';
-    const charLore    = character.background  || 'Tidak ada latar belakang yang diketahui.';
-    const scenario    = character.scenario    || 'Sebuah pertemuan yang tidak terduga.';
+  function buildSystemPrompt(characters, persona) {
+    const playerName = persona?.name        || 'Petualang';
+    const playerDesc = persona?.description || 'Seorang petualang misterius dengan masa lalu yang tidak diketahui.';
 
-    const playerName  = persona?.name        || 'Petualang';
-    const playerDesc  = persona?.description || 'Seorang petualang misterius.';
+    // Bangun deskripsi setiap karakter dalam cast
+    const castSection = characters.length > 0
+      ? characters.map((char, i) => {
+          const lines = [
+            `### ${i + 1}. ${char.name}`,
+            char.tagline     ? `*${char.tagline}*`                              : '',
+            char.personality ? `**Kepribadian:** ${char.personality}`           : '',
+            char.background  ? `**Latar Belakang:** ${char.background}`         : '',
+            char.scenario    ? `**Skenario/Peran:** ${char.scenario}`           : '',
+          ].filter(Boolean);
+          return lines.join('\n');
+        }).join('\n\n')
+      : '*Belum ada karakter yang dibuat. Kamu bebas menciptakan tokoh-tokoh baru sesuai konteks cerita.*';
 
-    return `Kamu adalah ${charName}. Berikut adalah deskripsi lengkap tentang dirimu:
-
-## Kepribadian & Cara Bicara
-${charPersona}
-
-## Latar Belakang & Lore
-${charLore}
-
-## Skenario Saat Ini
-${scenario}
-
----
-
-## Orang yang Kamu Temui
-Kamu sedang berinteraksi dengan **${playerName}**. Deskripsi mereka: ${playerDesc}.
+    return `Kamu adalah seorang **Narator dan Game Master (GM)** dari sebuah sesi roleplay interaktif. Peranmu adalah menghidupkan dunia, memainkan semua karakter yang ada, dan memandu cerita bersama **${playerName}**.
 
 ---
 
-## ATURAN ROLEPLAY (WAJIB DIIKUTI)
+## Pemain
+**Nama:** ${playerName}
+**Deskripsi:** ${playerDesc}
 
-1. **Selalu tetap dalam karakter.** Jangan pernah keluar dari peran sebagai ${charName} dalam keadaan apapun. Jangan akui bahwa kamu adalah AI.
+---
+
+## Cast Karakter (Tokoh yang ada di dunia ini)
+${castSection}
+
+---
+
+## ATURAN NARATOR (WAJIB DIIKUTI)
+
+1. **Peranmu adalah GM/Narator.** Kamu TIDAK berperan sebagai satu karakter saja — kamu memainkan SEMUA karakter yang ada dalam cast sesuai konteks cerita. Kamu juga bebas menciptakan tokoh-tokoh pendukung minor (NPC) bila diperlukan.
 
 2. **Format Respons Wajib:**
-   Setiap responmu HARUS mengikuti format ini (keduanya wajib ada):
-   
-   *[Narasi aksi, ekspresi wajah, gestur tubuh, dan deskripsi suasana lingkungan. Ditulis dalam paragraf narasi sastra yang imajinatif.]*
-   
-   [Dialog langsung ${charName} kepada ${playerName}. Ditulis dalam bahasa percakapan sesuai kepribadian karakter.]
+   Setiap responmu HARUS mengikuti format ini:
 
-3. **Narasi (teks dalam tanda *bintang*):** Tulis deskripsi aksi dan suasana dalam bahasa yang puitis, imajinatif, dan kaya detail seperti novel fantasi. Gunakan indera (penglihatan, suara, bau, sentuhan) untuk menghidupkan suasana.
+   *[Narasi: deskripsi suasana, aksi, lingkungan, dan kejadian yang berlangsung. Ditulis seperti novel.]*
 
-4. **Dialog:** Tulis dialog langsung yang mencerminkan kepribadian ${charName} secara konsisten. Gunakan gaya bicara yang unik sesuai latar belakang karakter.
+   **[Nama Karakter]:** "[Dialog langsung karakter tersebut.]"
 
-5. **Bahasa:** Gunakan Bahasa Indonesia yang baik, kaya, dan bervariasi. Hindari kata-kata yang berulang terlalu sering.
+   Jika ada beberapa karakter yang berbicara, tulis dialog masing-masing secara berurutan dengan label nama yang jelas.
 
-6. **Panjang respons:** Setiap respons harus memiliki setidaknya 2-3 kalimat narasi dan 1-3 kalimat dialog. Sesuaikan dengan konteks percakapan.
+3. **Narasi (teks dalam tanda *bintang*):** Tulis deskripsi dengan gaya sastra yang imajinatif, puitis, dan kaya detail — seperti novel fantasi terbaik. Gunakan semua indera (penglihatan, suara, bau, sentuhan, rasa) untuk menghidupkan suasana.
 
-7. **Konsistensi:** Ingat dan pertahankan detail karakter, nama, dan kejadian yang telah terjadi dalam percakapan sebelumnya.
+4. **Dialog Karakter:** Tulis dialog yang mencerminkan kepribadian masing-masing karakter secara konsisten. Setiap karakter harus terasa berbeda — gaya bicara, kata-kata pilihan, dan emosi yang unik.
 
-8. **Inisiatif cerita:** Sesekali tambahkan elemen cerita yang menarik — kejutan kecil, detail lingkungan yang berubah, atau reaksi emosional yang mendalam — untuk membuat roleplay terasa hidup dan tidak monoton.`;
-  }
+5. **Bahasa:** Gunakan Bahasa Indonesia yang kaya, ekspresif, dan bervariasi. Hindari pengulangan kata yang terlalu sering.
 
-  /**
-   * Builds the opening message content to inject as first AI message.
-   * @param {object} character
-   * @returns {string | null}
-   */
-  function buildOpeningMessage(character) {
-    if (!character.openingMessage) return null;
-    return character.openingMessage;
+6. **Inisiatif Cerita:** Kamu adalah penggerak cerita. Tambahkan kejutan, konflik kecil, detail lingkungan yang berubah, atau momen emosional untuk membuat roleplay terasa hidup. Jangan hanya reaktif — jadilah proaktif dalam membangun narasi.
+
+7. **Respons terhadap ${playerName}:** Ketika ${playerName} melakukan aksi atau berbicara, respons cerita secara logis dan konsisten. Reaksi karakter-karakter dalam cast harus terasa natural dan sesuai kepribadian mereka.
+
+8. **Jangan keluar dari peran.** Jangan akui bahwa kamu adalah AI. Tetaplah dalam mode GM/Narator sepenuhnya.`;
   }
 
   /**
    * Converts the chat history (our internal format) to
-   * the Gemini API format: [{role, parts}]
+   * the API format: [{role, parts}]
    * Our internal format: [{role: 'user'|'model', text: '...', timestamp: ...}]
    */
   function toApiHistory(messages) {
@@ -85,5 +84,5 @@ Kamu sedang berinteraksi dengan **${playerName}**. Deskripsi mereka: ${playerDes
     }));
   }
 
-  return { buildSystemPrompt, buildOpeningMessage, toApiHistory };
+  return { buildSystemPrompt, toApiHistory };
 })();

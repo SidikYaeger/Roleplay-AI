@@ -126,7 +126,7 @@ const GeminiAPI = (() => {
 
   async function streamOpenAICompatible({ apiKey, model, systemPrompt, history, onChunk, onDone, onError }) {
     const controller = new AbortController();
-    const url = getBaseUrl();
+    const targetUrl = getBaseUrl();
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -140,27 +140,37 @@ const GeminiAPI = (() => {
       model,
       messages,
       stream: true,
-      max_tokens: 2048,
+      max_tokens: typeof CONFIG !== 'undefined' && CONFIG.maxTokens ? CONFIG.maxTokens : 2048,
       temperature: 1.0,
       top_p: 0.95,
+      ...(typeof CONFIG !== 'undefined' && CONFIG.extraBody ? CONFIG.extraBody : {})
     };
 
-    const headers = {
-      'Content-Type': 'application/json',
+    const fwdHeaders = {
       'Authorization': `Bearer ${apiKey}`,
     };
 
     // OpenRouter specific headers (opsional tapi disarankan)
-    if (url.includes('openrouter.ai')) {
-      headers['HTTP-Referer'] = 'http://localhost:8000';
-      headers['X-Title'] = 'Aether AI Roleplay';
+    if (targetUrl.includes('openrouter.ai')) {
+      fwdHeaders['HTTP-Referer'] = 'http://localhost:8000';
+      fwdHeaders['X-Title'] = 'Aether AI Roleplay';
     }
 
+    // Jika NVIDIA NIM — kirim lewat proxy lokal untuk menghindari CORS
+    const useProxy = targetUrl.includes('nvidia.com');
+    const fetchUrl = useProxy ? '/api/chat' : targetUrl;
+    const fetchHeaders = { 'Content-Type': 'application/json' };
+    const fetchBody = useProxy
+      ? JSON.stringify({ targetUrl, headers: fwdHeaders, payload: body })
+      : JSON.stringify(body);
+
+    if (!useProxy) fetchHeaders['Authorization'] = `Bearer ${apiKey}`;
+
     try {
-      const response = await fetch(url, {
+      const response = await fetch(fetchUrl, {
         method: 'POST',
-        headers,
-        body: JSON.stringify(body),
+        headers: fetchHeaders,
+        body: fetchBody,
         signal: controller.signal,
       });
 
