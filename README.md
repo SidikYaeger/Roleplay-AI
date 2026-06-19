@@ -22,6 +22,7 @@
 
 ### Prasyarat
 - Google AI Studio API Key (gratis): [aistudio.google.com](https://aistudio.google.com/app/apikey)
+- Nvidia API Key (gratis): [build.nvidia.com](https://build.nvidia.com/)
 
 ### Jalankan Lokal
 
