@@ -1,6 +1,6 @@
 # ✦ Aether — ga kelar sial
 
-> code full by claude sonnet 4.6 and gemini pro 3.1 
+> code by claude sonnet 4.6 and gemini pro 3.1 
 
 ![Aether Preview](https://via.placeholder.com/900x400/0e0e1c/a78bfa?text=✦+Aether+AI+Roleplay)
 
