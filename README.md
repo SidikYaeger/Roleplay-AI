@@ -1,4 +1,4 @@
-# ✦ Aether — ga kelar sial
+# ✦ Aether
 
 > code by claude sonnet 4.6 and gemini pro 3.1 
 
